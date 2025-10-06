@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Weatherz.ViewModels"
+             x:DataType="vm:MainInfoScreenViewModel"
+             x:Class="Weatherz.MainInfoScreenView"
+             Title="Main Info">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <!-- Day and night gradient brushes -->
+            <LinearGradientBrush x:Key="DayGradient" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#FF49B0FF" Offset="0"/>
+                <GradientStop Color="#FF86C8FF" Offset="1"/>
+            </LinearGradientBrush>
+
+            <LinearGradientBrush x:Key="NightGradient" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#FF1D293C" Offset="0"/>
+                <GradientStop Color="#FF0E223B" Offset="1"/>
+            </LinearGradientBrush>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ContentPage.Content>
+        <Grid>
+            <!-- Background rectangle with a brush that switches based on IsDaytime -->
+            <Rectangle x:Name="BackgroundRect" Grid.RowSpan="3" Grid.ColumnSpan="1" StrokeThickness="0">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1" x:Name="DynamicBrush">
+                        <GradientStop Color="#FF49B0FF" Offset="0"/>
+                        <GradientStop Color="#FF86C8FF" Offset="1"/>
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="8">
+                <!-- City name -->
+                <Label Text="{Binding WeatherInfo.LocationName}"
+                       FontSize="32"
+                       HorizontalTextAlignment="Center"
+                       TextColor="White"
+                       Opacity="1"
+                       AutomationId="CityLabel"/>
+
+                <!-- Weather icon -->
+                <Image Source="{Binding WeatherInfo.WeatherIcon}"
+                       WidthRequest="120"
+                       HeightRequest="120"
+                       HorizontalOptions="Center"
+                       AutomationId="WeatherIcon"/>
+
+                <!-- Temperature label -->
+                <Label Text="{Binding WeatherInfo.TemperatureCelsius, StringFormat='{0}°'}" 
+                       FontSize="100"
+                       FontAttributes="Bold"
+                       HorizontalTextAlignment="Center"
+                       TextColor="White"
+                       AutomationId="TemperatureLabel"/>
+
+                <!-- Condition description -->
+                <Label Text="{Binding WeatherInfo.WeatherDescription}"
+                       FontSize="30"
+                       HorizontalTextAlignment="Center"
+                       TextColor="White"
+                       Opacity="0.9"
+                       AutomationId="ConditionLabel"/>
+
+                <!-- Details row -->
+                <Grid ColumnSpacing="35" RowSpacing="25" Padding="15" HorizontalOptions="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Humidity -->
+                    <StackLayout Grid.Row="0" Grid.Column="0" Spacing="2" HorizontalOptions="Center">
+                        <Label Text="Humidity" FontSize="15" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="{Binding WeatherInfo.Humidity, StringFormat='{0}%'}" FontSize="22" TextColor="White" HorizontalOptions="Center"/>
+                    </StackLayout>
+
+                    <!-- Wind Speed -->
+                    <StackLayout Grid.Row="0" Grid.Column="1" Spacing="2" HorizontalOptions="Center">
+                        <Label Text="Wind" FontSize="15" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="{Binding WeatherInfo.WindSpeedKph, StringFormat='{0} Km/h'}" FontSize="22" TextColor="White" HorizontalOptions="Center"/>
+                    </StackLayout>
+
+                    <!-- UV Index -->
+                    <StackLayout Grid.Row="1" Grid.Column="0" Spacing="2" HorizontalOptions="Center">
+                        <Label Text="UV Index" FontSize="15" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="{Binding WeatherInfo.UvIndex}" FontSize="22" TextColor="White" HorizontalOptions="Center"/>
+                    </StackLayout>
+
+                    <!-- Sensation -->
+                    <StackLayout Grid.Row="1" Grid.Column="1" Spacing="2" HorizontalOptions="Center">
+                        <Label Text="Sensation" FontSize="15" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="{Binding WeatherInfo.FeelsLikeCelsius, StringFormat='{0}°'}" FontSize="22" TextColor="White" HorizontalOptions="Center"/>
+                    </StackLayout>
+                </Grid>
+            </VerticalStackLayout>
+        </Grid>
+    </ContentPage.Content>
+</ContentPage>

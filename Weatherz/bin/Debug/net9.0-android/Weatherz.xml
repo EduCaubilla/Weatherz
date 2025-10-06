@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Weatherz</name>
+    </assembly>
+    <members>
+        <member name="P:Weatherz.ViewModels.MainInfoScreenViewModel.WeatherInfo">
+            <summary>
+            The underlying domain model. Setting this will update all exposed properties and raise PropertyChanged for dependents.
+            </summary>
+        </member>
+        <member name="P:Weatherz.ViewModels.MainInfoScreenViewModel.IsDaytime">
+            <summary>
+            True if the current observation time is between sunrise and sunset (basic local-time based heuristic).
+            Falls back to true if times are not parsable.
+            </summary>
+        </member>
+        <member name="M:Weatherz.ViewModels.MainInfoScreenViewModel.#ctor">
+            <summary>
+            Replace the ViewModel data from the model and raise property changed notifications for all mapped properties.
+            </summary>
+        </member>
+        <member name="T:Weatherz.Resource">
+            <summary>
+            Android Resource Designer class.
+            Exposes the Android Resource designer assembly into the project Namespace.
+            </summary>
+        </member>
+    </members>
+</doc>
