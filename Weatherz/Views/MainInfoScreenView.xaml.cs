@@ -22,6 +22,15 @@ namespace Weatherz
             vm.PropertyChanged += Vm_PropertyChanged;
         }
 
+        protected override async void OnAppearing()
+        {
+            base.OnAppearing();
+            if (vm != null)
+            {
+                await vm.OnAppearingAsync();
+            }
+        }
+
         private void Vm_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(MainInfoScreenViewModel.IsDaytime))
@@ -38,13 +47,13 @@ namespace Weatherz
                 DynamicBrush.GradientStops.Clear();
                 if (isDay)
                 {
-                    DynamicBrush.GradientStops.Add(new GradientStop { Color = Microsoft.Maui.Graphics.Color.FromArgb("#86C8FF"), Offset = 0 });
-                    DynamicBrush.GradientStops.Add(new GradientStop { Color = Microsoft.Maui.Graphics.Color.FromArgb("#49B0FF"), Offset = 1 });
+                    DynamicBrush.GradientStops.Add(new GradientStop { Color = Color.FromArgb("#86C8FF"), Offset = 0 });
+                    DynamicBrush.GradientStops.Add(new GradientStop { Color = Color.FromArgb("#49B0FF"), Offset = 1 });
                 }
                 else
                 {
-                    DynamicBrush.GradientStops.Add(new GradientStop { Color = Microsoft.Maui.Graphics.Color.FromArgb("#1D293C"), Offset = 0 });
-                    DynamicBrush.GradientStops.Add(new GradientStop { Color = Microsoft.Maui.Graphics.Color.FromArgb("#0E223B"), Offset = 1 });
+                    DynamicBrush.GradientStops.Add(new GradientStop { Color = Color.FromArgb("#1D293C"), Offset = 0 });
+                    DynamicBrush.GradientStops.Add(new GradientStop { Color = Color.FromArgb("#0E223B"), Offset = 1 });
                 }
             }
         }

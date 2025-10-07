@@ -4,16 +4,20 @@ namespace Weatherz.Utils
 {
     public class Tools
     {
-        public bool IsConnected;
+        public static bool IsConnected
+        {
+            get
+            {
+                var accessType = Connectivity.Current.NetworkAccess;
+                return accessType == NetworkAccess.Internet;
+            }
+        }
 
         NetworkAccess accessType = Connectivity.Current.NetworkAccess;
 
-        public Tools()
-        {
-            IsConnected = accessType == NetworkAccess.Internet;
-        }
+        public Tools(){}
 
-        public async void DisplayMessage(string title, string content, string buttonAccept)
+        public static async void DisplayMessage(string title, string content, string buttonAccept)
         {
             if (Application.Current == null) return;
             

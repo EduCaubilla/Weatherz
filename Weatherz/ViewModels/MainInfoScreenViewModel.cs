@@ -2,12 +2,16 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Weatherz.Models;
+using Weatherz.Services;
 
 namespace Weatherz.ViewModels
 {
     public class MainInfoScreenViewModel : INotifyPropertyChanged
     {
+        private readonly WeatherApiService _weatherApiService;
+        private readonly PermissionService _permissionService;
         private WeatherInfoModel? _weatherInfo;
+        private bool _isBusy;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -16,99 +20,40 @@ namespace Weatherz.ViewModels
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        /// <summary>
-        /// The underlying domain model. Setting this will update all exposed properties and raise PropertyChanged for dependents.
-        /// </summary>
         public WeatherInfoModel? WeatherInfo
         {
             get => _weatherInfo;
             set
             {
                 _weatherInfo = value;
-                // UpdateFromModel();
                 Raise();
             }
         }
 
-        // Mapped / formatted properties for binding in the view
-        // public string WeatherIcon => Model?.WeatherIcon ?? "sunny.png";
-
-        // public double TemperatureCelsius => Model?.TemperatureCelsius ?? 0.0;
-
-        // public string TemperatureString => Model is null ? "0\u00b0" : $"{Model.TemperatureCelsius:0}\u00b0";
-
-        // public string City => Model?.LocationName ?? "Unknown";
-
-        // public string HumidityPercent => Model is null ? "0%" : $"{Model.Humidity:0}%";
-
-        // public string WindSpeed => Model is null ? "0 km/h" : $"{Model.WindSpeedKph:0} km/h";
-
-        // public string UvIndex => Model is null ? "0" : Model.UvIndex.ToString();
-
-        // public string Sensation => Model is null ? "0\u00b0" : $"{Model.FeelsLikeCelsius:0}\u00b0";
-
-        /// <summary>
-        /// True if the current observation time is between sunrise and sunset (basic local-time based heuristic).
-        /// Falls back to true if times are not parsable.
-        /// </summary>
-        public bool IsDaytime
+        public bool IsBusy
         {
-            get
+            get => _isBusy;
+            set
             {
-                if (_weatherInfo == null)
-                    return true;
-
-                // Try parse sunrise / sunset strings as TimeSpan or DateTime. The model stores them as strings; assume HH:mm or ISO time.
-                try
-                {
-                    var obs = _weatherInfo.ObservationTime;
-
-                    if (!string.IsNullOrEmpty(_weatherInfo.Sunrise) && !string.IsNullOrEmpty(_weatherInfo.Sunset))
-                    {
-                        if (DateTime.TryParse(_weatherInfo.Sunrise, out var sunriseDt) && DateTime.TryParse(_weatherInfo.Sunset, out var sunsetDt))
-                        {
-                            // If sunrise/sunset probably are dates without timezone, compare only time of day in observation's date.
-                            var sunrise = new DateTime(obs.Year, obs.Month, obs.Day, sunriseDt.Hour, sunriseDt.Minute, 0);
-                            var sunset = new DateTime(obs.Year, obs.Month, obs.Day, sunsetDt.Hour, sunsetDt.Minute, 0);
-                            return obs >= sunrise && obs <= sunset;
-                        }
-
-                        // fallback to parsing as TimeSpan
-                        if (TimeSpan.TryParse(_weatherInfo.Sunrise, out var ss) && TimeSpan.TryParse(_weatherInfo.Sunset, out var se))
-                        {
-                            var t = obs.TimeOfDay;
-                            return t >= ss && t <= se;
-                        }
-                    }
-                }
-                catch
-                {
-                    // ignore parse errors and return a default
-                }
-
-                return true;
+                _isBusy = value;
+                Raise();
             }
         }
-
-        /// <summary>
-        /// Replace the ViewModel data from the model and raise property changed notifications for all mapped properties.
-        /// </summary>
-        // private void UpdateFromModel()
-        // {
-        //     // Raise change notifications for all properties bound in the view
-        //     Raise(nameof(WeatherIcon));
-        //     Raise(nameof(TemperatureCelsius));
-        //     Raise(nameof(TemperatureString));
-        //     Raise(nameof(City));
-        //     Raise(nameof(HumidityPercent));
-        //     Raise(nameof(WindSpeed));
-        //     Raise(nameof(UvIndex));
-        //     Raise(nameof(Sensation));
-        //     Raise(nameof(IsDaytime));
-        // }
+        public bool IsDaytime => WeatherInfo?.IsDayTime ?? true;
 
         public MainInfoScreenViewModel()
         {
+            _weatherApiService = new WeatherApiService();
+            _permissionService = new PermissionService();
+        }
+
+        public MainInfoScreenViewModel(bool initTestData)
+        {
+            _weatherApiService = new WeatherApiService();
+            _permissionService = new PermissionService();
+
+            if (!initTestData) return;
+
             _weatherInfo = new WeatherInfoModel
             {
                 WeatherIcon = "sunny.png",
@@ -121,13 +66,81 @@ namespace Weatherz.ViewModels
                 UvIndex = 3,
                 Sunrise = DateTime.Now.Date.AddHours(6).ToString("HH:mm"),
                 Sunset = DateTime.Now.Date.AddHours(18).ToString("HH:mm"),
-                ObservationTime = DateTime.Now
+                Localtime = DateTime.Now.ToString("HH:mm")
             };
         }
 
-        public MainInfoScreenViewModel(WeatherInfoModel initialModel)
+        public async Task OnAppearingAsync()
         {
-            _weatherInfo = initialModel ?? throw new ArgumentNullException(nameof(initialModel));
+            if (IsBusy) return;
+            IsBusy = true;
+
+            try
+            {
+                await setGeolocationProcess();
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private async Task setGeolocationProcess()
+        {
+            if (Utils.Tools.IsConnected)
+            {
+                var permissionStatus = await _permissionService.CheckAndRequestLocationPermissionAsync();
+                if (!permissionStatus)
+                {
+                    Utils.Tools.DisplayMessage("Location allowance error", "This app needs permission to access location to show weather information.\nPlease switch the permission on.", "Ok");
+                    return;
+                }
+
+                await getDeviceLocationAsync();
+            }
+            else
+            {
+                Utils.Tools.DisplayMessage("No Internet", "Please check your internet connection and try again.", "Ok");
+            }
+        }
+
+        private async Task getDeviceLocationAsync()
+        {
+            try
+            {
+                var location = await Geolocation.Default.GetLocationAsync(new GeolocationRequest
+                {
+                    DesiredAccuracy = GeolocationAccuracy.Medium,
+                    Timeout = TimeSpan.FromSeconds(5)
+                });
+
+                Console.WriteLine($"Location: {location?.Latitude}, {location?.Longitude}");
+
+                if (location != null)
+                {
+                    await FetchWeatherData(location.Latitude, location.Longitude);
+                }
+            }
+            catch (Exception ex)
+            {
+                Utils.Tools.DisplayMessage("Location Error", "Unable to get device location. Please ensure location services are enabled.", "Ok");
+                Console.WriteLine($"Error obtaining location: {ex.Message}");
+            }
+        }
+
+        private async Task FetchWeatherData(double latitude, double longitude)
+        {
+            try
+            {
+                var apiResponse = await _weatherApiService.GetWeatherInformation(latitude, longitude);
+                WeatherInfo = WeatherApiResponse.mapToModel(apiResponse);
+                Console.WriteLine($"Weather Description: {WeatherInfo.WeatherDescription}");
+            }
+            catch (Exception ex)
+            {
+                Utils.Tools.DisplayMessage("Error fetching data.", "Unable to get weather information. Please try again later.", "Ok");
+                Console.WriteLine($"Error fetching weather data: {ex.Message}");
+            }
         }
     }
 }
