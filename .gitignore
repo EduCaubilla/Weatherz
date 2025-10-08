@@ -321,6 +321,14 @@ ServiceFabricBackup/
 *.ldf
 *.ndf
 
+
+# Ignore build output folders (explicitly)
+# Root-level and recursive bin/ and obj/ folders
+/bin/
+/obj/
+**/bin/
+**/obj/
+
 # Business Intelligence projects
 *.rdl.data
 *.bim.layout
